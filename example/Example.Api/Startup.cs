@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using System;
 
 namespace Example.Api
 {
@@ -45,7 +46,7 @@ namespace Example.Api
 
             services
                 .AddAuthentication("BasicAuthentication")
-                .AddScheme<AuthenticationSchemeOptions, AuthHandler>("BasicAuthentication", options => { });
+                .AddScheme<AuthenticationSchemeOptions, AuthHandler>("BasicAuthentication", null);
 
             services.AddAutoMapper(options =>
             {
@@ -54,7 +55,10 @@ namespace Example.Api
 
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), option =>
+                {
+                    option.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+                });
             });
 
             services.AddControllers();
@@ -82,6 +86,7 @@ namespace Example.Api
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
